@@ -1,12 +1,17 @@
 #aisp-root {
   position: fixed;
   top: 0;
-  left: 255px;
+  left: 0;
   right: 0;
+  width: 100vw;
   z-index: 2147483647;
   color-scheme: dark;
   font-family: Inter, "Google Sans", Roboto, Arial, sans-serif;
   pointer-events: none;
+}
+
+body.aisp-layout-offset {
+  padding-top: var(--aisp-offset, 0px) !important;
 }
 
 #aisp-root * {
@@ -240,10 +245,6 @@
 }
 
 @media (max-width: 1300px) {
-  #aisp-root {
-    left: 0;
-  }
-
   .aisp-bar {
     flex-wrap: wrap;
   }

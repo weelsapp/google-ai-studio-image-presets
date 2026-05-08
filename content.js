@@ -35,6 +35,12 @@
   let lastUrl = location.href;
   let lastSignature = "";
   let isApplying = false;
+  let audioContext = null;
+  let generationActive = false;
+  let generationStartedAt = 0;
+  let generationWatcher = null;
+  let generationStartSnapshot = "";
+  let layoutObserver = null;
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -138,6 +144,67 @@
     }, 2200);
   }
 
+  function unlockAudio() {
+    if (audioContext) {
+      if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+      return;
+    }
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    audioContext = new AudioContextClass();
+    if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+  }
+
+  function playGenerationDoneSound() {
+    unlockAudio();
+    if (!audioContext || audioContext.state === "suspended") return false;
+
+    const now = audioContext.currentTime;
+    const tones = [
+      { frequency: 659.25, start: 0, duration: 0.11 },
+      { frequency: 880, start: 0.12, duration: 0.14 }
+    ];
+
+    tones.forEach((tone) => {
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(tone.frequency, now + tone.start);
+      gain.gain.setValueAtTime(0.0001, now + tone.start);
+      gain.gain.exponentialRampToValueAtTime(0.18, now + tone.start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + tone.start + tone.duration);
+      oscillator.connect(gain).connect(audioContext.destination);
+      oscillator.start(now + tone.start);
+      oscillator.stop(now + tone.start + tone.duration + 0.02);
+    });
+
+    return true;
+  }
+
+  function notifyGenerationDone(reason = "Generation done") {
+    generationActive = false;
+    if (generationWatcher) {
+      clearInterval(generationWatcher);
+      generationWatcher = null;
+    }
+
+    const played = playGenerationDoneSound();
+    showStatus(played ? reason : "Done (audio blocked)");
+  }
+
+  function buttonText(button) {
+    return normalize([
+      button.textContent,
+      button.getAttribute("aria-label"),
+      button.title
+    ].filter(Boolean).join(" "));
+  }
+
+  function isDisabledButton(button) {
+    return Boolean(button?.disabled) || button?.getAttribute("aria-disabled") === "true";
+  }
+
   function createOption(value) {
     return `<option value="${value}">${value}</option>`;
   }
@@ -202,6 +269,26 @@
     root.querySelector("#aisp-auto").checked = settings.autoApply;
     bindUi();
     renderRefs();
+    setupLayoutOffset();
+  }
+
+  function updateLayoutOffset() {
+    if (!root) return;
+    const height = Math.ceil(root.getBoundingClientRect().height);
+    document.body.classList.add("aisp-layout-offset");
+    document.documentElement.style.setProperty("--aisp-offset", `${height}px`);
+    document.body.style.setProperty("--aisp-offset", `${height}px`);
+  }
+
+  function setupLayoutOffset() {
+    updateLayoutOffset();
+    if (layoutObserver) layoutObserver.disconnect();
+
+    if ("ResizeObserver" in window) {
+      layoutObserver = new ResizeObserver(updateLayoutOffset);
+      layoutObserver.observe(root);
+    }
+    window.addEventListener("resize", updateLayoutOffset);
   }
 
   function bindUi() {
@@ -213,6 +300,9 @@
     const prompt = root.querySelector("#aisp-prompt");
     const file = root.querySelector(".aisp-file");
     const drop = root.querySelector("[data-aisp-drop]");
+
+    root.addEventListener("pointerdown", unlockAudio, { passive: true });
+    root.addEventListener("keydown", unlockAudio);
 
     const persist = async () => {
       settings.temperature = temp.value;
@@ -246,6 +336,7 @@
       settings.promptOpen = !settings.promptOpen;
       await saveSettings();
       root.classList.toggle("has-prompt", settings.promptOpen);
+      updateLayoutOffset();
       if (settings.promptOpen) prompt.focus();
     });
     root.querySelector("[data-aisp-apply-prompt]").addEventListener("click", () => applyPrompt(true));
@@ -469,10 +560,10 @@
     const buttons = Array.from(document.querySelectorAll("button, [role='button']"))
       .filter((button) => !root?.contains(button))
       .filter(visible)
-      .filter((button) => !button.disabled && button.getAttribute("aria-disabled") !== "true");
+      .filter((button) => !isDisabledButton(button));
 
     const runButton = buttons.find((button) => {
-      const text = normalize(button.textContent || button.getAttribute("aria-label") || button.title);
+      const text = buttonText(button);
       return text === "run" || text.includes("run");
     });
     if (runButton) return runButton;
@@ -480,10 +571,98 @@
     return buttons
       .filter((button) => {
         const rect = button.getBoundingClientRect();
-        const text = normalize(button.textContent || button.getAttribute("aria-label") || button.title);
+        const text = buttonText(button);
         return rect.top > window.innerHeight * 0.5 && (text.includes("send") || text.includes("submit") || text.includes("generate"));
       })
       .sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right)[0] || null;
+  }
+
+  function findGenerationControls() {
+    return Array.from(document.querySelectorAll("button, [role='button']"))
+      .filter((button) => !root?.contains(button))
+      .filter(visible)
+      .filter((button) => {
+        const rect = button.getBoundingClientRect();
+        const text = buttonText(button);
+        return rect.top > window.innerHeight * 0.45 && (
+          text.includes("run") ||
+          text.includes("stop") ||
+          text.includes("cancel") ||
+          text.includes("generate")
+        );
+      });
+  }
+
+  function generationLooksRunning() {
+    const controls = findGenerationControls();
+    if (controls.some((button) => {
+      const text = buttonText(button);
+      return text.includes("stop") || text.includes("cancel");
+    })) return true;
+
+    const runButton = controls.find((button) => {
+      const text = buttonText(button);
+      return text === "run" || text.includes("run") || text.includes("generate");
+    });
+    if (runButton && isDisabledButton(runButton)) return true;
+
+    const bodyText = normalize(document.body?.textContent || "");
+    return bodyText.includes("generating") || bodyText.includes("running");
+  }
+
+  function generationLooksComplete() {
+    const button = findSubmitButton();
+    return Boolean(button) && !generationLooksRunning();
+  }
+
+  function resultSnapshot() {
+    const nodes = Array.from(document.querySelectorAll("img, video, canvas, a[href*='download'], button"))
+      .filter((node) => !root?.contains(node))
+      .filter(visible)
+      .filter((node) => {
+        const rect = node.getBoundingClientRect();
+        return rect.width > 24 && rect.height > 24 && rect.top > 120;
+      })
+      .map((node) => [
+        node.tagName,
+        node.getAttribute("src") || node.getAttribute("href") || "",
+        Math.round(node.getBoundingClientRect().top),
+        Math.round(node.getBoundingClientRect().left)
+      ].join(":"));
+
+    return nodes.join("|");
+  }
+
+  function resultsChangedSinceStart() {
+    const current = resultSnapshot();
+    return Boolean(generationStartSnapshot && current && current !== generationStartSnapshot);
+  }
+
+  function startGenerationWatcher() {
+    if (generationWatcher) return;
+
+    generationWatcher = setInterval(() => {
+      if (!generationActive) return;
+
+      const elapsed = Date.now() - generationStartedAt;
+      if (elapsed < 4000) return;
+
+      if (elapsed > 180000) {
+        notifyGenerationDone("Generation maybe done");
+        return;
+      }
+
+      if (generationLooksComplete() && (elapsed > 12000 || resultsChangedSinceStart())) {
+        notifyGenerationDone("Generation done");
+      }
+    }, 1200);
+  }
+
+  function markGenerationStarted() {
+    generationActive = true;
+    generationStartedAt = Date.now();
+    generationStartSnapshot = resultSnapshot();
+    startGenerationWatcher();
   }
 
   async function waitForSubmitButton(timeout = 6000) {
@@ -507,6 +686,7 @@
     }
 
     button.click();
+    markGenerationStarted();
     showStatus("Submitted");
     return true;
   }
@@ -708,11 +888,26 @@
     window.addEventListener("popstate", () => scheduleApply(500));
   }
 
+  function watchExternalSubmits() {
+    document.addEventListener("click", (event) => {
+      const button = event.target?.closest?.("button, [role='button']");
+      if (!button || root?.contains(button) || !visible(button) || isDisabledButton(button)) return;
+
+      const text = buttonText(button);
+      const rect = button.getBoundingClientRect();
+      if (rect.top > window.innerHeight * 0.45 && (text === "run" || text.includes("run") || text.includes("generate"))) {
+        unlockAudio();
+        setTimeout(markGenerationStarted, 300);
+      }
+    }, true);
+  }
+
   async function boot() {
     await loadSettings();
     refs = await dbAllImages().catch(() => []);
     render();
     watchNavigation();
+    watchExternalSubmits();
     scheduleApply(900);
     setTimeout(consumeRetryIfNeeded, 1100);
   }

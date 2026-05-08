@@ -1,8 +1,8 @@
 # Google AI Studio Image Presets
 
-A local Chromium extension that saves and auto-applies Google AI Studio image generation settings.
+A local ChatGPT Atlas / Chromium extension that saves and auto-applies Google AI Studio image generation settings.
 
-It was created on **May 8, 2026** for the Google AI Studio image playground UI shown below, specifically the **Nano Banana 2** image generation experience. If Google changes the AI Studio interface, some selectors may need updates.
+It was created on **May 8, 2026** for the Google AI Studio image playground UI shown below, specifically the **Nano Banana 2** image generation experience in **ChatGPT Atlas**. It should also work in other Chromium browsers that support unpacked extensions. If Google changes the AI Studio interface, some selectors may need updates.
 
 ![AI Studio Presets screenshot](assets/googleaistudioextension.png)
 
@@ -21,6 +21,8 @@ This extension adds a small control bar directly on `aistudio.google.com` so rep
 - Store reference images in a local tray.
 - Submit from the top bar.
 - Retry from the top bar: opens a fresh chat, reapplies settings, restores the prompt, attempts to attach reference images, and submits.
+- Plays a short audio notification when a generation appears to be complete.
+- Uses a full-width top bar and pushes the AI Studio page down instead of covering it.
 - Runs only on `https://aistudio.google.com/*`.
 - No backend, no analytics, no tracking.
 
@@ -41,14 +43,14 @@ If you found this while searching for any of these, you are probably in the righ
 
 ## Compatibility
 
-This is a local Chromium extension. It should work in Chromium-based browsers that support unpacked extensions, including:
+This was built and tested for **ChatGPT Atlas**. It should also work in Chromium-based browsers that support unpacked extensions, including:
 
 - ChatGPT Atlas
 - Google Chrome
 - Microsoft Edge
 - Brave
 
-Tested on **macOS with ChatGPT Atlas**. It is not intentionally Mac-only, but the install notes below are written from a Mac/Chromium perspective.
+Tested on **macOS with ChatGPT Atlas**. It is not intentionally Mac-only, but the install notes below are written from a Mac/Atlas/Chromium perspective.
 
 ## Installation
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Studio Presets",
-  "description": "Save and auto-apply Google AI Studio image generation presets, prompts, refs, submit, and retry.",
+  "description": "ChatGPT Atlas/Chromium extension to save and auto-apply Google AI Studio image presets.",
   "version": "0.1.0",
   "permissions": ["storage"],
   "host_permissions": ["https://aistudio.google.com/*"],
