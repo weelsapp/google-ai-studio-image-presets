@@ -1,0 +1,261 @@
+#aisp-root {
+  position: fixed;
+  top: 0;
+  left: 255px;
+  right: 0;
+  z-index: 2147483647;
+  color-scheme: dark;
+  font-family: Inter, "Google Sans", Roboto, Arial, sans-serif;
+  pointer-events: none;
+}
+
+#aisp-root * {
+  box-sizing: border-box;
+}
+
+.aisp-bar {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  background: rgba(24, 25, 28, 0.96);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+  backdrop-filter: blur(14px);
+}
+
+.aisp-prompt-panel {
+  display: none;
+  gap: 10px;
+  align-items: stretch;
+  padding: 10px 12px;
+  background: rgba(31, 33, 37, 0.97);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: auto;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+#aisp-root.has-prompt .aisp-prompt-panel {
+  display: flex;
+}
+
+.aisp-prompt-panel textarea {
+  flex: 1 1 auto;
+  min-height: 78px;
+  max-height: 220px;
+  resize: vertical;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  padding: 9px 10px;
+  background: #202124;
+  color: #f1f3f4;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  outline: none;
+}
+
+.aisp-prompt-actions {
+  display: flex;
+  width: 150px;
+  flex: 0 0 150px;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.aisp-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #e8eaed;
+  white-space: nowrap;
+}
+
+.aisp-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.aisp-control label {
+  font-size: 11px;
+  line-height: 1;
+  color: #aeb4bd;
+  white-space: nowrap;
+}
+
+.aisp-control input,
+.aisp-control select {
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  background: #292b31;
+  color: #f1f3f4;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.aisp-control input {
+  width: 58px;
+  padding: 0 8px;
+}
+
+.aisp-control select {
+  max-width: 130px;
+  padding: 0 28px 0 8px;
+}
+
+.aisp-button {
+  height: 30px;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 10px;
+  background: #8ab4f8;
+  color: #101114;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.aisp-button.secondary {
+  background: #303238;
+  color: #e8eaed;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.aisp-button.submit {
+  background: #81c995;
+  color: #07130b;
+}
+
+.aisp-button.retry {
+  background: #8ab4f8;
+  color: #101114;
+}
+
+.aisp-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #c6cad1;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.aisp-toggle input {
+  margin: 0;
+}
+
+.aisp-drop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 126px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 7px;
+  color: #c6cad1;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.aisp-drop.is-dragging {
+  border-color: #8ab4f8;
+  background: rgba(138, 180, 248, 0.12);
+}
+
+.aisp-file {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.aisp-refs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.aisp-refs::-webkit-scrollbar {
+  display: none;
+}
+
+.aisp-ref {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #202124;
+}
+
+.aisp-ref img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.aisp-ref button {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 15px;
+  height: 15px;
+  border: 0;
+  border-radius: 0 0 0 6px;
+  background: rgba(0, 0, 0, 0.72);
+  color: white;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 15px;
+  padding: 0;
+}
+
+.aisp-spacer {
+  flex: 1 1 auto;
+}
+
+.aisp-status {
+  min-width: 74px;
+  color: #9aa0a6;
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 1300px) {
+  #aisp-root {
+    left: 0;
+  }
+
+  .aisp-bar {
+    flex-wrap: wrap;
+  }
+
+  .aisp-prompt-panel {
+    flex-direction: column;
+  }
+
+  .aisp-prompt-actions {
+    width: auto;
+    flex: 0 0 auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

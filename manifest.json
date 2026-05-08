@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "AI Studio Presets",
+  "description": "Save and auto-apply Google AI Studio image generation presets, prompts, refs, submit, and retry.",
+  "version": "0.1.0",
+  "permissions": ["storage"],
+  "host_permissions": ["https://aistudio.google.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://aistudio.google.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
